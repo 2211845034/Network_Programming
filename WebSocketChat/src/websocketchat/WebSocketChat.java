@@ -13,8 +13,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-import javafx.stage.Stage;
-
 
 public class WebSocketChat extends Application {
 
