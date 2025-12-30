@@ -10,40 +10,40 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.image.Image;
 import java.net.URI;
 import java.net.URL;
-import java.net.InetSocketAddress;
+import java.util.Optional;
 
-// استيراد مكتبات الـ WebSocket (يجب إضافة الـ JAR أولاً)
+// استيراد مكتبات الـ WebSocket
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.server.WebSocketServer;
-import org.java_websocket.WebSocket;
-import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.handshake.ServerHandshake;
 
 public class WebSocketChat extends Application {
 
     private VBox messageArea;
     private TextField inputField;
-    private WebSocketClient client; // العميل
+    private WebSocketClient client;
     private final String IMAGE_PATH = "/websocketchat/userimage/user.jpeg";
 
     public static void main(String[] args) {
-        // تشغيل السيرفر في Thread منفصل قبل تشغيل الواجهة
-        new Thread(() -> {
-            ChatServer server = new ChatServer(8887);
-            server.run();
-        }).start();
-
         launch(args);
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
+        // 1. طلب عنوان IP السيرفر قبل فتح الواجهة
+        String serverIP = askForIP();
+        if (serverIP == null) {
+            Platform.exit();
+            return;
+        }
+
+        // 2. تصميم الواجهة الرسومية
         BorderPane root = new BorderPane();
 
-        // --- الهيدر ---
+        // الهيدر
         Label groupTitle = new Label("مجموعة البرمجة 💬");
         groupTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
         HBox header = new HBox(groupTitle);
@@ -52,19 +52,22 @@ public class WebSocketChat extends Application {
         header.setStyle("-fx-background-color: #2c3e50;");
         root.setTop(header);
 
-        // --- منطقة الرسائل ---
+        // منطقة الرسائل
         messageArea = new VBox(15);
         messageArea.setPadding(new Insets(15));
         ScrollPane scrollPane = new ScrollPane(messageArea);
         scrollPane.setFitToWidth(true);
         root.setCenter(scrollPane);
 
-        // --- منطقة الإدخال ---
+        // منطقة الإدخال
         HBox inputBox = new HBox(10);
         inputBox.setPadding(new Insets(10));
         inputField = new TextField();
+        inputField.setPromptText("اكتب رسالتك هنا...");
         HBox.setHgrow(inputField, Priority.ALWAYS);
+        
         Button sendButton = new Button("إرسال");
+        sendButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
         
         sendButton.setOnAction(e -> sendMessage());
         inputField.setOnAction(e -> sendMessage());
@@ -73,32 +76,42 @@ public class WebSocketChat extends Application {
         root.setBottom(inputBox);
 
         Scene scene = new Scene(root, 450, 600);
-        stage.setTitle("Chat App with WebSocket");
+        stage.setTitle("Chat Client - WebSocket");
         stage.setScene(scene);
         stage.show();
 
-        // الاتصال بالسيرفر بعد تشغيل الواجهة
-        initWebSocket();
+        // 3. محاولة الاتصال بالسيرفر
+        initWebSocket(serverIP);
     }
 
-    private void initWebSocket() {
+    private String askForIP() {
+        TextInputDialog dialog = new TextInputDialog("127.0.0.1");
+        dialog.setTitle("الاتصال بالشبكة");
+        dialog.setHeaderText("إعدادات تطبيق المحادثة");
+        dialog.setContentText("أدخل عنوان IP جهاز السيرفر:");
+        Optional<String> result = dialog.showAndWait();
+        return result.orElse(null);
+    }
+
+    private void initWebSocket(String ip) {
         try {
-            client = new WebSocketClient(new URI("ws://localhost:8887")) {
+            client = new WebSocketClient(new URI("ws://" + ip + ":8887")) {
                 @Override
-                public void onOpen(org.java_websocket.handshake.ServerHandshake handshakedata) {
-                    System.out.println("تم الاتصال بالسيرفر بنجاح!");
+                public void onOpen(ServerHandshake handshakedata) {
+                    System.out.println("تم الاتصال بالسيرفر: " + ip);
                 }
 
                 @Override
                 public void onMessage(String message) {
+                    // استقبال الرسائل من الآخرين (باللون الأخضر)
                     Platform.runLater(() -> {
-                        displayMessage("مستخدم آخر", message, Pos.CENTER_LEFT, Color.web("#ffffff"));
+                        displayMessage("طرف آخر", message, Pos.CENTER_LEFT, Color.web("#99ff99"));
                     });
                 }
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
-                    System.out.println("أغلق الاتصال: " + reason);
+                    System.out.println("انقطع الاتصال بالسيرفر");
                 }
 
                 @Override
@@ -111,10 +124,12 @@ public class WebSocketChat extends Application {
             e.printStackTrace();
         }
     }
+
     private void sendMessage() {
         String text = inputField.getText();
         if (!text.isEmpty() && client != null && client.isOpen()) {
-            client.send(text); // إرسال النص للسيرفر ليوزعه على الكل
+            client.send(text); // إرسال للسيرفر
+            // عرض رسالتي أنا (باللون الأزرق)
             displayMessage("أنا", text, Pos.CENTER_RIGHT, Color.web("#d1e8ff"));
             inputField.clear();
         }
@@ -127,7 +142,7 @@ public class WebSocketChat extends Application {
             Image img = new Image(imageUrl.toExternalForm(), false);
             avatar.setFill(new ImagePattern(img));
         } else {
-            avatar.setFill(Color.web("#bdc3c7"));
+            avatar.setFill(Color.web("#bdc3c7")); // لون افتراضي إذا لم تجد الصورة
         }
 
         VBox bubble = new VBox(5);
@@ -153,24 +168,5 @@ public class WebSocketChat extends Application {
 
     private String toRGBCode(Color color) {
         return String.format("#%02X%02X%02X", (int)(color.getRed()*255), (int)(color.getGreen()*255), (int)(color.getBlue()*255));
-    }
-
-    // --- كلاس السيرفر الداخلي ---
-    static class ChatServer extends WebSocketServer {
-        public ChatServer(int port) { super(new InetSocketAddress(port)); }
-        @Override public void onOpen(WebSocket conn, ClientHandshake handshake) {}
-        @Override public void onClose(WebSocket conn, int code, String reason, boolean remote) {}
-        @Override public void onStart() { System.out.println("السيرفر يعمل!"); }
-        @Override public void onError(WebSocket conn, Exception ex) {}
-        
-        @Override
-        public void onMessage(WebSocket conn, String message) {
-            // توزيع الرسالة على كل المتصلين ما عدا المرسل
-            for (WebSocket sock : getConnections()) {
-                if (sock != conn) {
-                    sock.send(message);
-                }
-            }
-        }
     }
 }
