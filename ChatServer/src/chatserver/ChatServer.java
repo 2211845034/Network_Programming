@@ -20,12 +20,14 @@ public class ChatServer extends WebSocketServer {
         System.out.println("متصل جديد من: " + conn.getRemoteSocketAddress());
     }
 
-    @Override
-    public void onMessage(WebSocket conn, String message) {
-        // توزيع الرسالة على الجميع
-        broadcast(message);
-        System.out.println("رسالة واردة: " + message);
+   @Override
+public void onMessage(WebSocket conn, String message) {
+    for (WebSocket sock : getConnections()) {
+        if (sock != conn) { // لا ترسل الرسالة للشخص الذي أرسلها
+            sock.send(message);
+        }
     }
+}
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {

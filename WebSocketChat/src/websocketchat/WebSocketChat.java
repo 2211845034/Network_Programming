@@ -95,7 +95,7 @@ public class WebSocketChat extends Application {
 
     private void initWebSocket(String ip) {
         try {
-            client = new WebSocketClient(new URI("ws://" + ip + ":8887")) {
+            client = new WebSocketClient(new URI("ws://" + ip.trim() + ":8887")) {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
                     System.out.println("تم الاتصال بالسيرفر: " + ip);
