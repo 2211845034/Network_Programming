@@ -22,10 +22,10 @@ import org.java_websocket.handshake.ServerHandshake;
 
 public class WebSocketChat extends Application {
 
-   private VBox messageArea;
+    private VBox messageArea;
     private TextField inputField;
     private WebSocketClient client;
-    private String userName; // متغير لتخزين اسم المستخدم
+    private String userName;
     private final String IMAGE_PATH = "/websocketchat/userimage/user.jpeg";
 
     public static void main(String[] args) {
@@ -34,23 +34,23 @@ public class WebSocketChat extends Application {
 
     @Override
     public void start(Stage stage) {
-        // 1. طلب الاسم وعنوان IP
         String config = askForConfig();
         if (config == null || !config.contains("|")) {
             Platform.exit();
             return;
         }
-        
+
         String[] parts = config.split("\\|");
         this.userName = parts[0];
         String serverIP = parts[1];
 
-        // 2. تصميم الواجهة الرسومية
         BorderPane root = new BorderPane();
-        Label groupTitle = new Label("مجموعة البرمجة 💬 (مرحباً " + userName + ")");
+
+        // Header - English Translation
+        Label groupTitle = new Label("Programming Group 💬 (Welcome " + userName + ")");
         groupTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
         HBox header = new HBox(groupTitle);
-        header.setAlignment(Pos.CENTER);
+        header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(15));
         header.setStyle("-fx-background-color: #2c3e50;");
         root.setTop(header);
@@ -61,14 +61,16 @@ public class WebSocketChat extends Application {
         scrollPane.setFitToWidth(true);
         root.setCenter(scrollPane);
 
+        // Input Area - English Translation
         HBox inputBox = new HBox(10);
         inputBox.setPadding(new Insets(10));
         inputField = new TextField();
-        inputField.setPromptText("اكتب رسالتك هنا...");
+        inputField.setPromptText("Type your message...");
         HBox.setHgrow(inputField, Priority.ALWAYS);
-        Button sendButton = new Button("إرسال");
+
+        Button sendButton = new Button("Send");
         sendButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold;");
-        
+
         sendButton.setOnAction(e -> sendMessage());
         inputField.setOnAction(e -> sendMessage());
 
@@ -83,13 +85,12 @@ public class WebSocketChat extends Application {
         initWebSocket(serverIP);
     }
 
-    // نافذة تطلب الاسم والـ IP معاً
     private String askForConfig() {
         Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("إعدادات الدخول");
-        dialog.setHeaderText("من فضلك أدخل بياناتك للبدء");
+        dialog.setTitle("Login Settings");
+        dialog.setHeaderText("Please enter your details to start");
 
-        ButtonType loginButtonType = new ButtonType("دخول", ButtonBar.ButtonData.OK_DONE);
+        ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
@@ -98,17 +99,15 @@ public class WebSocketChat extends Application {
         grid.setPadding(new Insets(20, 150, 10, 10));
 
         TextField nameField = new TextField();
-        nameField.setPromptText("اسمي هو...");
+        nameField.setPromptText("Your Name");
         TextField ipField = new TextField("127.0.0.1");
-        ipField.setPromptText("IP السيرفر");
 
-        grid.add(new Label("الاسم:"), 0, 0);
+        grid.add(new Label("Name:"), 0, 0);
         grid.add(nameField, 1, 0);
-        grid.add(new Label("IP السيرفر:"), 0, 1);
+        grid.add(new Label("Server IP:"), 0, 1);
         grid.add(ipField, 1, 1);
 
         dialog.getDialogPane().setContent(grid);
-
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == loginButtonType) {
                 return nameField.getText() + "|" + ipField.getText();
@@ -125,36 +124,42 @@ public class WebSocketChat extends Application {
             client = new WebSocketClient(new URI("ws://" + ip.trim() + ":8887")) {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
-                    System.out.println("تم الاتصال بنجاح!");
+                    System.out.println("Connected!");
                 }
 
                 @Override
                 public void onMessage(String fullMessage) {
                     Platform.runLater(() -> {
-                        // الرسالة تأتي بصيغة "الاسم: النص"
                         if (fullMessage.contains(": ")) {
                             String[] parts = fullMessage.split(": ", 2);
-                            displayMessage(parts[0], parts[1], Pos.CENTER_LEFT, Color.web("#99ff99"));
+                            // Light Green for others (#e2f3e5)
+                            displayMessage(parts[0], parts[1], Pos.CENTER_LEFT, Color.web("#e2f3e5"));
                         }
                     });
                 }
 
-                @Override public void onClose(int code, String reason, boolean remote) {}
-                @Override public void onError(Exception ex) { System.err.println("خطأ: " + ex.getMessage()); }
+                @Override
+                public void onClose(int code, String reason, boolean remote) {
+                }
+
+                @Override
+                public void onError(Exception ex) {
+                    System.err.println("Error: " + ex.getMessage());
+                }
             };
             client.connect();
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void sendMessage() {
         String text = inputField.getText();
         if (!text.isEmpty() && client != null && client.isOpen()) {
-            // نرسل الاسم والرسالة معاً للسيرفر
             String messageToSend = userName + ": " + text;
             client.send(messageToSend);
-            
-            // نعرضها عندي باسم "أنا"
-            displayMessage("أنا", text, Pos.CENTER_RIGHT, Color.web("#d1e8ff"));
+            // Blue for me (#d1e8ff)
+            displayMessage("Me", text, Pos.CENTER_RIGHT, Color.web("#d1e8ff"));
             inputField.clear();
         }
     }
@@ -170,12 +175,18 @@ public class WebSocketChat extends Application {
 
         VBox bubble = new VBox(5);
         bubble.setPadding(new Insets(10));
-        bubble.setStyle("-fx-background-color: " + toRGBCode(bubbleColor) + "; -fx-background-radius: 15;");
+
+        // User color logic: darken the bubble color slightly for the text to make it readable but matching
+        String bubbleHex = toRGBCode(bubbleColor);
+        bubble.setStyle("-fx-background-color: " + bubbleHex + "; -fx-background-radius: 15;");
 
         Label nameLabel = new Label(user);
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px;");
+        // Using a darker shade of the bubble color for the name
+        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: " + toRGBCode(bubbleColor.darker()) + ";");
+
         Label msgLabel = new Label(message);
         msgLabel.setWrapText(true);
+        msgLabel.setStyle("-fx-text-fill: #2c3e50;"); // Dark grey for text readability
 
         bubble.getChildren().addAll(nameLabel, msgLabel);
 
@@ -190,6 +201,6 @@ public class WebSocketChat extends Application {
     }
 
     private String toRGBCode(Color color) {
-        return String.format("#%02X%02X%02X", (int)(color.getRed()*255), (int)(color.getGreen()*255), (int)(color.getBlue()*255));
+        return String.format("#%02X%02X%02X", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
     }
 }
