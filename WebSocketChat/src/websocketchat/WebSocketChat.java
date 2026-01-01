@@ -50,7 +50,7 @@ public class WebSocketChat extends Application {
         Label groupTitle = new Label("Programming Group 💬 (Welcome " + userName + ")");
         groupTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
         HBox header = new HBox(groupTitle);
-        header.setAlignment(Pos.CENTER_LEFT);
+        header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(15));
         header.setStyle("-fx-background-color: #2c3e50;");
         root.setTop(header);
