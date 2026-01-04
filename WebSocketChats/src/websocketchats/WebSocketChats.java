@@ -51,7 +51,7 @@ public class WebSocketChats extends Application {
         // 2. تصميم الواجهة الرسومية
         BorderPane root = new BorderPane();
 
-        Label groupTitle = new Label("مجموعة البرمجة  💬");
+        Label groupTitle = new Label("مجموعة البرمجة  ");
         groupTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
         HBox header = new HBox(groupTitle);
         header.setAlignment(Pos.CENTER);
@@ -120,12 +120,19 @@ public class WebSocketChats extends Application {
     }
 
     @OnMessage
-    public void onMessage(String message) {
-        // استقبال الرسائل وعرضها في خيط الواجهة
-        Platform.runLater(() -> {
-            displayMessage("طرف آخر", message, Pos.CENTER_LEFT, Color.web("#99ff99"));
-        });
-    }
+public void onMessage(String message) {
+    // استقبال الرسائل وعرضها في خيط الواجهة
+    Platform.runLater(() -> {
+        if (message.contains(": ")) {
+            // تقسيم الرسالة إلى قسمين: الاسم والمحتوى
+            String[] parts = message.split(": ", 2);
+            displayMessage(parts[0], parts[1], Pos.CENTER_LEFT, Color.web("#e2f3e5"));
+        } else {
+            // إذا كانت رسالة نظام أو لا تحتوي على اسم
+            displayMessage("طرف آخر", message, Pos.CENTER_LEFT, Color.web("#e2f3e5"));
+        }
+    });
+}
 
     @OnClose
     public void onClose(Session session, CloseReason reason) {

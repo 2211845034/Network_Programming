@@ -115,9 +115,8 @@ public class WebSocketChat extends Application {
             return null;
         });
 
-//        Optional<String> result = dialog.showAndWait();
-//        return result.orElse(null);
-        return nameField.getText();
+        Optional<String> result = dialog.showAndWait();
+        return result.orElse(null);
     }
 
     private void initWebSocket(String ip) {
