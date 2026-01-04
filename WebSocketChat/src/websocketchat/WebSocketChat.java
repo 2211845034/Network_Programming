@@ -47,7 +47,7 @@ public class WebSocketChat extends Application {
         BorderPane root = new BorderPane();
 
         // Header - English Translation
-        Label groupTitle = new Label("Programming Group 💬 (Welcome " + userName + ")");
+        Label groupTitle = new Label("Programming Group  (Welcome " + userName + ")");
         groupTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
         HBox header = new HBox(groupTitle);
         header.setAlignment(Pos.CENTER);
@@ -115,8 +115,9 @@ public class WebSocketChat extends Application {
             return null;
         });
 
-        Optional<String> result = dialog.showAndWait();
-        return result.orElse(null);
+//        Optional<String> result = dialog.showAndWait();
+//        return result.orElse(null);
+        return nameField.getText();
     }
 
     private void initWebSocket(String ip) {
